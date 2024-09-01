@@ -1,27 +1,22 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+
+dotenv.config(); // Carregar variáveis de ambiente do arquivo .env
+
 const app = express();
-const port = 3000;
-
-// Carregar variáveis de ambiente do arquivo .env
-dotenv.config();
-
-// IP permitido
-const IP_PERMITIDO = process.env.IP_PERMITIDO;
+const port = process.env.PORT || 3000; // Definir a porta (padrão é 3000)
 
 // Middleware para parsear JSON no corpo das requisições
 app.use(bodyParser.json());
 
-// Middleware para verificar o IP do cliente
+// Middleware para verificar o IP do cliente (opcional)
+const IP_PERMITIDO = process.env.IP_PERMITIDO;
 app.use((req, res, next) => {
     const clienteIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log(`IP do cliente: ${clienteIP}`);
-
-    if (clienteIP !== IP_PERMITIDO) {
-        return res.status(403).send({ mensagem: 'Acesso negado. IP não autorizado.' });
+    if (IP_PERMITIDO && clienteIP !== IP_PERMITIDO) {
+        return res.status(403).json({ mensagem: 'Acesso negado. IP não autorizado.' });
     }
-
     next();
 });
 
@@ -31,20 +26,20 @@ app.post('/enviar-info', (req, res) => {
 
     // Validação de dados
     if (!email || !senha || !telefone || !nome) {
-        return res.status(400).send({ mensagem: 'Todos os campos são obrigatórios.' });
+        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios.' });
     }
 
     // Processa a informação recebida
     console.log('Dados recebidos:', { email, senha, telefone, nome });
 
     // Responde com uma mensagem de confirmação
-    res.send({ mensagem: 'Informação recebida com sucesso!', dados: { email, senha, telefone, nome } });
+    res.json({ mensagem: 'Informação recebida com sucesso!', dados: { email, senha, telefone, nome } });
 });
 
 // Middleware de tratamento de erros
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send({ mensagem: 'Algo deu errado!' });
+    res.status(500).json({ mensagem: 'Algo deu errado!' });
 });
 
 // Inicia o servidor
